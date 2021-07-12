@@ -65,6 +65,7 @@ struct drm {
 
 	/* number of frames to run for: */
 	unsigned int count;
+	bool nonblocking;
 
 	int (*run)(const struct gbm *gbm, const struct egl *egl);
 };
@@ -76,10 +77,10 @@ struct drm_fb {
 
 struct drm_fb * drm_fb_get_from_bo(struct gbm_bo *bo);
 
-int init_drm(struct drm *drm, const char *device, const char *mode_str, int connector_id, unsigned int vrefresh, unsigned int count);
+int init_drm(struct drm *drm, const char *device, const char *mode_str, int connector_id, unsigned int vrefresh, unsigned int count, bool nonblocking);
 int init_drm_render(struct drm *drm, const char *device, const char *mode_str, unsigned int count);
-const struct drm * init_drm_legacy(const char *device, const char *mode_str, int connector_id, unsigned int vrefresh, unsigned int count);
-const struct drm * init_drm_atomic(const char *device, const char *mode_str, int connector_id, unsigned int vrefresh, unsigned int count);
+const struct drm * init_drm_legacy(const char *device, const char *mode_str, int connector_id, unsigned int vrefresh, unsigned int count, bool nonblocking);
+const struct drm * init_drm_atomic(const char *device, const char *mode_str, int connector_id, unsigned int vrefresh, unsigned int count, bool nonblocking);
 const struct drm * init_drm_offscreen(const char *device, const char *mode_str, unsigned int count);
 
 #endif /* _DRM_COMMON_H */

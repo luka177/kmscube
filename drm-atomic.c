@@ -289,15 +289,17 @@ static int atomic_run(const struct gbm *gbm, const struct egl *egl)
 			report_time = cur_time;
 		}
 
-		/* Check for user input: */
-		struct pollfd fdset[] = { {
-			.fd = STDIN_FILENO,
-			.events = POLLIN,
-		} };
-		ret = poll(fdset, ARRAY_SIZE(fdset), 0);
-		if (ret > 0) {
-			printf("user interrupted!\n");
-			return 0;
+		if (!drm.nonblocking) {
+			/* Check for user input: */
+			struct pollfd fdset[] = { {
+				.fd = STDIN_FILENO,
+				.events = POLLIN,
+			} };
+			ret = poll(fdset, ARRAY_SIZE(fdset), 0);
+			if (ret > 0) {
+				printf("user interrupted!\n");
+				return 0;
+			}
 		}
 
 		/*
@@ -392,12 +394,12 @@ static int get_plane_id(void)
 }
 
 const struct drm * init_drm_atomic(const char *device, const char *mode_str,
-		int connector_id, unsigned int vrefresh, unsigned int count)
+		int connector_id, unsigned int vrefresh, unsigned int count, bool nonblocking)
 {
 	uint32_t plane_id;
 	int ret;
 
-	ret = init_drm(&drm, device, mode_str, connector_id, vrefresh, count);
+	ret = init_drm(&drm, device, mode_str, connector_id, vrefresh, count, nonblocking);
 	if (ret)
 		return NULL;
 

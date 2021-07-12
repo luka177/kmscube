@@ -270,7 +270,7 @@ static drmModeConnector * find_drm_connector(int fd, drmModeRes *resources,
 }
 
 int init_drm(struct drm *drm, const char *device, const char *mode_str,
-		int connector_id, unsigned int vrefresh, unsigned int count)
+		int connector_id, unsigned int vrefresh, unsigned int count, bool nonblocking)
 {
 	drmModeRes *resources;
 	drmModeConnector *connector = NULL;
@@ -378,6 +378,7 @@ int init_drm(struct drm *drm, const char *device, const char *mode_str,
 
 	drm->connector_id = connector->connector_id;
 	drm->count = count;
+	drm->nonblocking = nonblocking;
 
 	return 0;
 }

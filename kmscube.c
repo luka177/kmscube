@@ -41,7 +41,7 @@ static const struct egl *egl;
 static const struct gbm *gbm;
 static const struct drm *drm;
 
-static const char *shortopts = "Ac:D:f:gM:m:n:Op:S:s:V:v:x";
+static const char *shortopts = "Ac:D:f:gM:m:n:NOp:S:s:V:v:x";
 
 static const struct option longopts[] = {
 	{"atomic", no_argument,       0, 'A'},
@@ -58,12 +58,13 @@ static const struct option longopts[] = {
 	{"video",  required_argument, 0, 'V'},
 	{"vmode",  required_argument, 0, 'v'},
 	{"surfaceless", no_argument,  0, 'x'},
+	{"nonblocking", no_argument,  0, 'N'},
 	{0, 0, 0, 0}
 };
 
 static void usage(const char *name)
 {
-	printf("Usage: %s [-ADfgMmSsVvx]\n"
+	printf("Usage: %s [-ADfgMmNSsVvx]\n"
 			"\n"
 			"options:\n"
 			"    -A, --atomic             use atomic modesetting and fencing\n"
@@ -88,6 +89,7 @@ static void usage(const char *name)
 			"    -v, --vmode=VMODE        specify the video mode in the format\n"
 			"                             <mode>[-<vrefresh>]\n"
 			"    -x, --surfaceless        use surfaceless mode, instead of gbm surface\n"
+			"    -N, --nonblocking        do not poll for input\n"
 			,
 			name);
 }
@@ -113,6 +115,7 @@ int main(int argc, char *argv[])
 	unsigned int vrefresh = 0;
 	unsigned int count = ~0;
 	bool surfaceless = false;
+	bool nonblocking = false;
 
 #ifdef HAVE_GST
 	gst_init(&argc, &argv);
@@ -169,6 +172,9 @@ int main(int argc, char *argv[])
 		case 'n':
 			connector_id = strtoul(optarg, NULL, 0);
 			break;
+		case 'N':
+			nonblocking = true;
+			break;
 		case 'O':
 			offscreen = 1;
 			break;
@@ -216,9 +222,9 @@ int main(int argc, char *argv[])
 	if (offscreen)
 		drm = init_drm_offscreen(device, mode_str, count);
 	else if (atomic)
-		drm = init_drm_atomic(device, mode_str, connector_id, vrefresh, count);
+		drm = init_drm_atomic(device, mode_str, connector_id, vrefresh, count, nonblocking);
 	else
-		drm = init_drm_legacy(device, mode_str, connector_id, vrefresh, count);
+		drm = init_drm_legacy(device, mode_str, connector_id, vrefresh, count, nonblocking);
 	if (!drm) {
 		printf("failed to initialize %s DRM\n",
 		       offscreen ? "offscreen" :

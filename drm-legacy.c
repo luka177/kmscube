@@ -131,7 +131,7 @@ static int legacy_run(const struct gbm *gbm, const struct egl *egl)
 			} else if (ret == 0) {
 				printf("select timeout!\n");
 				return -1;
-			} else if (FD_ISSET(0, &fds)) {
+			} else if (FD_ISSET(0, &fds) && !drm.nonblocking) {
 				printf("user interrupted!\n");
 				return 0;
 			}
@@ -170,11 +170,11 @@ static int legacy_run(const struct gbm *gbm, const struct egl *egl)
 }
 
 const struct drm * init_drm_legacy(const char *device, const char *mode_str,
-		int connector_id, unsigned int vrefresh, unsigned int count)
+		int connector_id, unsigned int vrefresh, unsigned int count, bool nonblocking)
 {
 	int ret;
 
-	ret = init_drm(&drm, device, mode_str, connector_id, vrefresh, count);
+	ret = init_drm(&drm, device, mode_str, connector_id, vrefresh, count, nonblocking);
 	if (ret)
 		return NULL;
 
