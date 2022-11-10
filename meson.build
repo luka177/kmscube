@@ -62,7 +62,7 @@ if with_gles3
   add_project_arguments('-DHAVE_GLES3', language : 'c')
   message('GLES3 supported; shadertoy & texturator are included in this build')
 else
-  message('GLES3 not supported; shadertoy & texturator are NOT included in this build')
+  warning('GLES3 not supported; shadertoy & texturator are NOT included in this build')
 endif
 
 dep_libpng = dependency('libpng', required : false)
