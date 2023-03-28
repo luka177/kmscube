@@ -67,7 +67,7 @@
  * Description of layout on screen from texelFetch:
  *
  * Draws a series of "rectangles" which display each miplevel and array slice,
- * at full size.  They are layed out as follows:
+ * at full size.  They are laid out as follows:
  *
  * miplevel 3 +          +          +          +          +
  *

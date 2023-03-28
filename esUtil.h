@@ -139,7 +139,7 @@ void ESUTIL_API esInitContext ( ESContext *esContext );
 ///         ES_WINDOW_DEPTH   - specifies that a depth buffer should be created
 ///         ES_WINDOW_STENCIL - specifies that a stencil buffer should be created
 ///         ES_WINDOW_MULTISAMPLE - specifies that a multi-sample buffer should be created
-/// \return GL_TRUE if window creation is succesful, GL_FALSE otherwise
+/// \return GL_TRUE if window creation is successful, GL_FALSE otherwise
 GLboolean ESUTIL_API esCreateWindow ( ESContext *esContext, const char *title, GLint width, GLint height, GLuint flags );
 
 //
@@ -291,7 +291,7 @@ void ESUTIL_API esOrtho(ESMatrix *result, float left, float right, float bottom,
 void ESUTIL_API esMatrixMultiply(ESMatrix *result, ESMatrix *srcA, ESMatrix *srcB);
 
 //
-//// \brief return an indentity matrix 
+//// \brief return an identity matrix
 //// \param result returns identity matrix
 //
 void ESUTIL_API esMatrixLoadIdentity(ESMatrix *result);
