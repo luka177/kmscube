@@ -55,7 +55,7 @@ dep_gbm = dependency('gbm', version : '>=13.0')
 dep_egl = dependency('egl')
 dep_gles2 = dependency('glesv2')
 
-with_gles3 = cc.check_header('GLES3/gl3.h')
+with_gles3 = cc.check_header('GLES3/gl3.h', dependencies: dep_gles2)
 
 if with_gles3
   sources += files('cube-shadertoy.c')
