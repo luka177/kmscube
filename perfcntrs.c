@@ -30,8 +30,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <GLES3/gl3.h>
-
 #include "common.h"
 
 /* Module to collect a specified set of performance counts, and accumulate
