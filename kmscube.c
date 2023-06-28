@@ -41,7 +41,7 @@ static const struct egl *egl;
 static const struct gbm *gbm;
 static const struct drm *drm;
 
-static const char *shortopts = "Ac:D:f:M:m:p:S:s:V:v:x";
+static const char *shortopts = "Ac:D:f:M:m:Op:S:s:V:v:x";
 
 static const struct option longopts[] = {
 	{"atomic", no_argument,       0, 'A'},
@@ -50,6 +50,7 @@ static const struct option longopts[] = {
 	{"format", required_argument, 0, 'f'},
 	{"mode",   required_argument, 0, 'M'},
 	{"modifier", required_argument, 0, 'm'},
+	{"offscreen", no_argument,    0, 'O'},
 	{"perfcntr", required_argument, 0, 'p'},
 	{"samples",  required_argument, 0, 's'},
 	{"video",  required_argument, 0, 'V'},
@@ -73,6 +74,7 @@ static void usage(const char *name)
 			"        nv12-2img -  yuv textured (color conversion in shader)\n"
 			"        nv12-1img -  yuv textured (single nv12 texture)\n"
 			"    -m, --modifier=MODIFIER  hardcode the selected modifier\n"
+			"    -O, --offscreen          use offscreen rendering (e.g. for render nodes)\n"
 			"    -p, --perfcntr=LIST      sample specified performance counters using\n"
 			"                             the AMD_performance_monitor extension (comma\n"
 			"                             separated list, shadertoy mode only)\n"
@@ -99,6 +101,7 @@ int main(int argc, char *argv[])
 	uint64_t modifier = DRM_FORMAT_MOD_LINEAR;
 	int samples = 0;
 	int atomic = 0;
+	int offscreen = 0;
 	int opt;
 	unsigned int len;
 	unsigned int vrefresh = 0;
@@ -154,6 +157,9 @@ int main(int argc, char *argv[])
 		case 'm':
 			modifier = strtoull(optarg, NULL, 0);
 			break;
+		case 'O':
+			offscreen = 1;
+			break;
 		case 'p':
 			perfcntr = optarg;
 			break;
@@ -190,12 +196,21 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (atomic)
+	if (offscreen && atomic) {
+		printf("Only one of `--atomic' and `--offscreen' should be specified.\n");
+		return -1;
+	}
+
+	if (offscreen)
+		drm = init_drm_offscreen(device, mode_str, count);
+	else if (atomic)
 		drm = init_drm_atomic(device, mode_str, vrefresh, count);
 	else
 		drm = init_drm_legacy(device, mode_str, vrefresh, count);
 	if (!drm) {
-		printf("failed to initialize %s DRM\n", atomic ? "atomic" : "legacy");
+		printf("failed to initialize %s DRM\n",
+		       offscreen ? "offscreen" :
+		       atomic ? "atomic" : "legacy");
 		return -1;
 	}
 

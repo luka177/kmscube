@@ -175,6 +175,32 @@ static int get_resources(int fd, drmModeRes **resources)
 
 #define MAX_DRM_DEVICES 64
 
+static int find_drm_render_device(void)
+{
+	drmDevicePtr devices[MAX_DRM_DEVICES] = { NULL };
+	int num_devices, fd = -1;
+
+	num_devices = drmGetDevices2(0, devices, MAX_DRM_DEVICES);
+	if (num_devices < 0) {
+		printf("drmGetDevices2 failed: %s\n", strerror(-num_devices));
+		return -1;
+	}
+
+	for (int i = 0; i < num_devices && fd < 0; i++) {
+		drmDevicePtr device = devices[i];
+
+		if (!(device->available_nodes & (1 << DRM_NODE_RENDER)))
+			continue;
+		fd = open(device->nodes[DRM_NODE_RENDER], O_RDWR);
+	}
+	drmFreeDevices(devices, num_devices);
+
+	if (fd < 0)
+		printf("no drm device found!\n");
+
+	return fd;
+}
+
 static int find_drm_device(drmModeRes **resources)
 {
 	drmDevicePtr devices[MAX_DRM_DEVICES] = { NULL };
@@ -328,6 +354,44 @@ int init_drm(struct drm *drm, const char *device, const char *mode_str,
 	drmModeFreeResources(resources);
 
 	drm->connector_id = connector->connector_id;
+	drm->count = count;
+
+	return 0;
+}
+
+int init_drm_render(struct drm *drm, const char *device, const char *mode_str, unsigned int count)
+{
+	int width, height;
+	drmModeModeInfo *mode;
+
+	if (!mode_str)
+		return -1;
+
+	if (sscanf(mode_str, "%dx%d", &width, &height) != 2)
+		return -1;
+
+	if (device) {
+		drm->fd = open(device, O_RDWR);
+	} else {
+		drm->fd = find_drm_render_device();
+	}
+
+	if (drm->fd < 0) {
+		printf("could not open drm device\n");
+		return -1;
+	}
+
+	mode = malloc(sizeof(*mode));
+	if (!mode) {
+		close(drm->fd);
+		drm->fd = -1;
+		return -1;
+	}
+
+	mode->hdisplay = width;
+	mode->vdisplay = height;
+	drm->mode = mode;
+
 	drm->count = count;
 
 	return 0;
