@@ -10,7 +10,7 @@
 
 latest-meson:
   extends: .meson
-  image: archlinux:base-devel
+  image: $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/archlinux:base-devel
   before_script:
     - pacman -Syu --noconfirm --needed
         meson
@@ -22,7 +22,7 @@ latest-meson:
 
 oldest-meson:
   extends: .meson
-  image: debian:stable
+  image: $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/debian:stable
   before_script:
     - printf > /etc/dpkg/dpkg.cfg.d/99-exclude-cruft "%s\n"
         'path-exclude=/usr/share/doc/*'
