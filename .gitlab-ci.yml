@@ -1,16 +1,16 @@
-.artifacts-meson: &artifacts-meson
-  when: always
-  paths:
-   - _build/meson-logs
-
-.meson-build: &meson-build
-  - meson _build -D auto_features=enabled
-  - ninja -C _build
+.meson:
+  stage: build
+  script:
+    - meson _build -D auto_features=enabled
+    - ninja -C _build
+  artifacts:
+    when: always
+    paths:
+     - _build/meson-logs
 
 latest-meson:
-  stage: build
+  extends: .meson
   image: archlinux:base-devel
-  artifacts: *artifacts-meson
   before_script:
     - pacman -Syu --noconfirm --needed
         meson
@@ -19,12 +19,10 @@ latest-meson:
         gstreamer
         gst-plugins-base
         libpng
-  script: *meson-build
 
 oldest-meson:
-  stage: build
+  extends: .meson
   image: debian:stable
-  artifacts: *artifacts-meson
   before_script:
     - printf > /etc/dpkg/dpkg.cfg.d/99-exclude-cruft "%s\n"
         'path-exclude=/usr/share/doc/*'
@@ -49,5 +47,3 @@ oldest-meson:
         python3 python3-pip
         libpng-dev
     - pip3 install --break-system-packages meson==0.48
-  script: *meson-build
-
