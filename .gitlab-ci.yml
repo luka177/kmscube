@@ -1,7 +1,7 @@
 .meson:
   stage: build
   script:
-    - meson _build -D auto_features=enabled
+    - meson setup _build -D auto_features=enabled
     - ninja -C _build
   artifacts:
     when: always
