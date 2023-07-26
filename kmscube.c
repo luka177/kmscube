@@ -41,7 +41,7 @@ static const struct egl *egl;
 static const struct gbm *gbm;
 static const struct drm *drm;
 
-static const char *shortopts = "Ac:D:f:M:m:Op:S:s:V:v:x";
+static const char *shortopts = "Ac:D:f:M:m:n:Op:S:s:V:v:x";
 
 static const struct option longopts[] = {
 	{"atomic", no_argument,       0, 'A'},
@@ -50,6 +50,7 @@ static const struct option longopts[] = {
 	{"format", required_argument, 0, 'f'},
 	{"mode",   required_argument, 0, 'M'},
 	{"modifier", required_argument, 0, 'm'},
+	{"connector_id", required_argument, 0, 'n'},
 	{"offscreen", no_argument,    0, 'O'},
 	{"perfcntr", required_argument, 0, 'p'},
 	{"samples",  required_argument, 0, 's'},
@@ -65,7 +66,7 @@ static void usage(const char *name)
 			"\n"
 			"options:\n"
 			"    -A, --atomic             use atomic modesetting and fencing\n"
-			"    -c, --count              run for the specified number of frames\n"
+			"    -c, --count=N            run for the specified number of frames\n"
 			"    -D, --device=DEVICE      use the given device\n"
 			"    -f, --format=FOURCC      framebuffer format\n"
 			"    -M, --mode=MODE          specify mode, one of:\n"
@@ -74,6 +75,7 @@ static void usage(const char *name)
 			"        nv12-2img -  yuv textured (color conversion in shader)\n"
 			"        nv12-1img -  yuv textured (single nv12 texture)\n"
 			"    -m, --modifier=MODIFIER  hardcode the selected modifier\n"
+			"    -n, --connector_id=N     use connector ID N (see drm_info)\n"
 			"    -O, --offscreen          use offscreen rendering (e.g. for render nodes)\n"
 			"    -p, --perfcntr=LIST      sample specified performance counters using\n"
 			"                             the AMD_performance_monitor extension (comma\n"
@@ -102,6 +104,7 @@ int main(int argc, char *argv[])
 	int samples = 0;
 	int atomic = 0;
 	int offscreen = 0;
+	int connector_id = -1;
 	int opt;
 	unsigned int len;
 	unsigned int vrefresh = 0;
@@ -157,6 +160,9 @@ int main(int argc, char *argv[])
 		case 'm':
 			modifier = strtoull(optarg, NULL, 0);
 			break;
+		case 'n':
+			connector_id = strtoul(optarg, NULL, 0);
+			break;
 		case 'O':
 			offscreen = 1;
 			break;
@@ -204,9 +210,9 @@ int main(int argc, char *argv[])
 	if (offscreen)
 		drm = init_drm_offscreen(device, mode_str, count);
 	else if (atomic)
-		drm = init_drm_atomic(device, mode_str, vrefresh, count);
+		drm = init_drm_atomic(device, mode_str, connector_id, vrefresh, count);
 	else
-		drm = init_drm_legacy(device, mode_str, vrefresh, count);
+		drm = init_drm_legacy(device, mode_str, connector_id, vrefresh, count);
 	if (!drm) {
 		printf("failed to initialize %s DRM\n",
 		       offscreen ? "offscreen" :
