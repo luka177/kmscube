@@ -175,6 +175,7 @@ enum mode {
 
 const struct egl * init_cube_smooth(const struct gbm *gbm, int samples);
 const struct egl * init_cube_tex(const struct gbm *gbm, enum mode mode, int samples);
+const struct egl * init_cube_gears(const struct gbm *gbm, int samples);
 
 #ifdef HAVE_GLES3
 const struct egl * init_cube_shadertoy(const struct gbm *gbm, const char *shadertoy, int samples);
