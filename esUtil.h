@@ -256,7 +256,7 @@ void ESUTIL_API esTranslate(ESMatrix *result, GLfloat tx, GLfloat ty, GLfloat tz
 void ESUTIL_API esRotate(ESMatrix *result, GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
 
 //
-// \brief multiply matrix specified by result with a perspective matrix and return new matrix in result
+/// \brief multiply matrix specified by result with a perspective matrix and return new matrix in result
 /// \param result Specifies the input matrix.  new matrix is returned in result.
 /// \param left, right Coordinates for the left and right vertical clipping planes
 /// \param bottom, top Coordinates for the bottom and top horizontal clipping planes
@@ -291,10 +291,23 @@ void ESUTIL_API esOrtho(ESMatrix *result, float left, float right, float bottom,
 void ESUTIL_API esMatrixMultiply(ESMatrix *result, ESMatrix *srcA, ESMatrix *srcB);
 
 //
-//// \brief return an identity matrix
-//// \param result returns identity matrix
+/// \brief return an identity matrix
+/// \param result returns identity matrix
 //
 void ESUTIL_API esMatrixLoadIdentity(ESMatrix *result);
+
+
+//
+/// \brief Transposes a 4x4 matrix.
+/// \param result Specifies the matrix to transpose. New matrix is returned in result.
+//
+void ESUTIL_API esTranspose(ESMatrix *result);
+
+//
+/// \brief Inverts a 4x4 matrix.
+/// \param result Specifies the input matrix. New matrix is returned in result.
+//
+void ESUTIL_API esInvert(ESMatrix *result);
 
 #ifdef __cplusplus
 }

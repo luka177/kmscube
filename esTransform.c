@@ -77,54 +77,29 @@ esTranslate(ESMatrix *result, GLfloat tx, GLfloat ty, GLfloat tz)
 void ESUTIL_API
 esRotate(ESMatrix *result, GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
-   GLfloat sinAngle, cosAngle;
-   GLfloat mag = sqrtf(x * x + y * y + z * z);
-      
-   sinAngle = sinf ( angle * PI / 180.0f );
-   cosAngle = cosf ( angle * PI / 180.0f );
-   if ( mag > 0.0f )
-   {
-      GLfloat xx, yy, zz, xy, yz, zx, xs, ys, zs;
-      GLfloat oneMinusCos;
-      ESMatrix rotMat;
-   
-      x /= mag;
-      y /= mag;
-      z /= mag;
+    GLfloat s, c;
+    ESMatrix r;
 
-      xx = x * x;
-      yy = y * y;
-      zz = z * z;
-      xy = x * y;
-      yz = y * z;
-      zx = z * x;
-      xs = x * sinAngle;
-      ys = y * sinAngle;
-      zs = z * sinAngle;
-      oneMinusCos = 1.0f - cosAngle;
+    s = sinf(angle * PI / 180.0f);
+    c = cosf(angle * PI / 180.0f);
+    r.m[0][0] = x * x * (1 - c) + c;
+    r.m[0][1] = y * x * (1 - c) + z * s;
+    r.m[0][2] = x * z * (1 - c) - y * s;
+    r.m[0][3] = 0;
+    r.m[1][0] = x * y * (1 - c) - z * s;
+    r.m[1][1] = y * y * (1 - c) + c;
+    r.m[1][2] = y * z * (1 - c) + x * s;
+    r.m[1][3] = 0;
+    r.m[2][0] = x * z * (1 - c) + y * s;
+    r.m[2][1] = y * z * (1 - c) - x * s;
+    r.m[2][2] = z * z * (1 - c) + c;
+    r.m[2][3] = 0;
+    r.m[3][0] = 0;
+    r.m[3][1] = 0;
+    r.m[3][2] = 0;
+    r.m[3][3] = 1;
 
-      rotMat.m[0][0] = (oneMinusCos * xx) + cosAngle;
-      rotMat.m[0][1] = (oneMinusCos * xy) - zs;
-      rotMat.m[0][2] = (oneMinusCos * zx) + ys;
-      rotMat.m[0][3] = 0.0F; 
-
-      rotMat.m[1][0] = (oneMinusCos * xy) + zs;
-      rotMat.m[1][1] = (oneMinusCos * yy) + cosAngle;
-      rotMat.m[1][2] = (oneMinusCos * yz) - xs;
-      rotMat.m[1][3] = 0.0F;
-
-      rotMat.m[2][0] = (oneMinusCos * zx) - ys;
-      rotMat.m[2][1] = (oneMinusCos * yz) + xs;
-      rotMat.m[2][2] = (oneMinusCos * zz) + cosAngle;
-      rotMat.m[2][3] = 0.0F; 
-
-      rotMat.m[3][0] = 0.0F;
-      rotMat.m[3][1] = 0.0F;
-      rotMat.m[3][2] = 0.0F;
-      rotMat.m[3][3] = 1.0F;
-
-      esMatrixMultiply( result, &rotMat, result );
-   }
+    esMatrixMultiply(result, &r, result);
 }
 
 void ESUTIL_API
@@ -134,6 +109,8 @@ esFrustum(ESMatrix *result, float left, float right, float bottom, float top, fl
     float       deltaY = top - bottom;
     float       deltaZ = farZ - nearZ;
     ESMatrix    frust;
+
+    esMatrixLoadIdentity(result);
 
     if ( (nearZ <= 0.0f) || (farZ <= 0.0f) ||
          (deltaX <= 0.0f) || (deltaY <= 0.0f) || (deltaZ <= 0.0f) )
@@ -231,5 +208,51 @@ esMatrixLoadIdentity(ESMatrix *result)
     result->m[1][1] = 1.0f;
     result->m[2][2] = 1.0f;
     result->m[3][3] = 1.0f;
+}
+
+void ESUTIL_API
+esTranspose(ESMatrix *result)
+{
+    ESMatrix tmp;
+    tmp.m[0][0] = result->m[0][0];
+    tmp.m[0][1] = result->m[1][0];
+    tmp.m[0][2] = result->m[2][0];
+    tmp.m[0][3] = result->m[3][0];
+    tmp.m[1][0] = result->m[0][1];
+    tmp.m[1][1] = result->m[1][1];
+    tmp.m[1][2] = result->m[2][1];
+    tmp.m[1][3] = result->m[3][1];
+    tmp.m[2][0] = result->m[0][2];
+    tmp.m[2][1] = result->m[1][2];
+    tmp.m[2][2] = result->m[2][2];
+    tmp.m[2][3] = result->m[3][2];
+    tmp.m[3][0] = result->m[0][3];
+    tmp.m[3][1] = result->m[1][3];
+    tmp.m[3][2] = result->m[2][3];
+    tmp.m[3][3] = result->m[3][3];
+
+    memcpy(result, &tmp, sizeof(tmp));
+}
+
+void ESUTIL_API
+esInvert(ESMatrix *result)
+{
+    ESMatrix tmp;
+    esMatrixLoadIdentity(&tmp);
+
+    // Extract and invert the translation part 't'. The inverse of a
+    // translation matrix can be calculated by negating the translation
+    // coordinates.
+    tmp.m[3][0] = -result->m[3][0];
+    tmp.m[3][1] = -result->m[3][1];
+    tmp.m[3][2] = -result->m[3][2];
+
+    // Invert the rotation part 'r'. The inverse of a rotation matrix is
+    // equal to its transpose.
+    result->m[3][0] = result->m[3][1] = result->m[3][2] = 0;
+    esTranspose(result);
+
+    // inv(m) = inv(r) * inv(t)
+    esMatrixMultiply(result, &tmp, result);
 }
 
