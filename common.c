@@ -253,15 +253,13 @@ create_framebuffer(const struct egl *egl, struct gbm_bo *bo,
 
 	if (egl->modifiers_supported) {
 		const uint64_t modifier = gbm_bo_get_modifier(bo);
-		if (modifier != DRM_FORMAT_MOD_LINEAR) {
-			size_t attrs_index = 12;
-			khr_image_attrs[attrs_index++] =
-			    EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT;
-			khr_image_attrs[attrs_index++] = modifier & 0xfffffffful;
-			khr_image_attrs[attrs_index++] =
-			    EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT;
-			khr_image_attrs[attrs_index++] = modifier >> 32;
-		}
+		size_t attrs_index = 12;
+		khr_image_attrs[attrs_index++] =
+		    EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT;
+		khr_image_attrs[attrs_index++] = modifier & 0xfffffffful;
+		khr_image_attrs[attrs_index++] =
+		    EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT;
+		khr_image_attrs[attrs_index++] = modifier >> 32;
 	}
 
 	fb->image = egl->eglCreateImageKHR(egl->display, EGL_NO_CONTEXT,
