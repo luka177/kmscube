@@ -391,6 +391,11 @@ int init_drm_render(struct drm *drm, const char *device, const char *mode_str, u
 	if (!mode_str)
 		return -1;
 
+	if (!strnlen(mode_str, DRM_DISPLAY_MODE_LEN)) {
+		printf("Always provide a video mode for offscreen renders, eg: -v 1024x768\n");
+		return -1;
+	}
+
 	if (sscanf(mode_str, "%dx%d", &width, &height) != 2)
 		return -1;
 
