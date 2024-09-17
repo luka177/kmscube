@@ -271,7 +271,7 @@ video_init(const struct egl *egl, const struct gbm *gbm, const char *filename)
 
 	/* Setup pipeline: */
 	static const char *pipeline =
-		"filesrc name=\"src\" ! decodebin name=\"decode\" ! video/x-raw ! appsink sync=false name=\"sink\"";
+		"filesrc name=\"src\" ! decodebin3 name=\"decode\" ! video/x-raw ! appsink sync=false name=\"sink\"";
 	dec->pipeline = gst_parse_launch(pipeline, NULL);
 
 	dec->sink = gst_bin_get_by_name(GST_BIN(dec->pipeline), "sink");

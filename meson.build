@@ -83,7 +83,7 @@ foreach _dep : [
   'gstreamer-allocators-1.0',
   'gstreamer-video-1.0',
 ]
-  dep_gst += dependency(_dep, version : '>= 1.6.0', required : get_option('gstreamer'))
+  dep_gst += dependency(_dep, version : '>= 1.22.0', required : get_option('gstreamer'))
 endforeach
 dep_gst += dependency('glib-2.0', required : get_option('gstreamer'))
 
