@@ -341,7 +341,7 @@ int init_egl(struct egl *egl, const struct gbm *gbm, int samples)
 		egl->display = egl->eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_KHR,
 				gbm->dev, NULL);
 	} else {
-		egl->display = eglGetDisplay((void *)gbm->dev);
+		egl->display = eglGetDisplay((EGLNativeDisplayType)gbm->dev);
 	}
 
 	if (!eglInitialize(egl->display, &major, &minor)) {
