@@ -31,8 +31,6 @@
 #include <sys/time.h>
 #include <math.h>
 
-#include <GL/gl.h>
-
 #include "common.h"
 #include "esUtil.h"
 
@@ -490,7 +488,7 @@ gears_framebuffer_create()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, texw, texh, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, texw, texh, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, 0);
 
 	glGenFramebuffers(1, &gl.gears_fb.fb);
 	glBindFramebuffer(GL_FRAMEBUFFER, gl.gears_fb.fb);
