@@ -68,19 +68,20 @@ struct drm_fb * drm_fb_get_from_bo(struct gbm_bo *bo)
 		 offsets[4] = {0}, flags = 0;
 	int ret = -1;
 
-	if (fb)
+	if (fb) {
+printf("Already have fb %d\n", fb->fb_id);
 		return fb;
-
+}
 	fb = calloc(1, sizeof *fb);
 	fb->bo = bo;
 
 	width = gbm_bo_get_width(bo);
 	height = gbm_bo_get_height(bo);
 	format = gbm_bo_get_format(bo);
-
+printf("gbm_bo_get_handle_for_plane: %d gbm_bo_get_modifier: %d gbm_bo_get_plane_count: %d gbm_bo_get_stride_for_plane: %d gbm_bo_get_offset: %d\n", gbm_bo_get_handle_for_plane, gbm_bo_get_modifier, gbm_bo_get_plane_count, gbm_bo_get_stride_for_plane, gbm_bo_get_offset);
 	if (gbm_bo_get_handle_for_plane && gbm_bo_get_modifier &&
 	    gbm_bo_get_plane_count && gbm_bo_get_stride_for_plane &&
-	    gbm_bo_get_offset) {
+	    gbm_bo_get_offset && 0) {
 
 		uint64_t modifiers[4] = {0};
 		modifiers[0] = gbm_bo_get_modifier(bo);
@@ -96,10 +97,13 @@ struct drm_fb * drm_fb_get_from_bo(struct gbm_bo *bo)
 			flags = DRM_MODE_FB_MODIFIERS;
 			printf("Using modifier %" PRIx64 "\n", modifiers[0]);
 		}
-
+printf("going to do smth retarded\n");
+return NULL;
 		ret = drmModeAddFB2WithModifiers(drm_fd, width, height,
 				format, handles, strides, offsets,
 				modifiers, &fb->fb_id, flags);
+//ret = drmModeAddFB(drm_fd, width, height, 32, 24,
+  //                 dumb_create.pitch, dumb_create.handle, &fb->fb_id);
 	}
 
 	if (ret) {
@@ -109,8 +113,30 @@ struct drm_fb * drm_fb_get_from_bo(struct gbm_bo *bo)
 		memcpy(handles, (uint32_t [4]){gbm_bo_get_handle(bo).u32,0,0,0}, 16);
 		memcpy(strides, (uint32_t [4]){gbm_bo_get_stride(bo),0,0,0}, 16);
 		memset(offsets, 0, 16);
+
+struct drm_mode_create_dumb dumb_create = {
+    .height = height,
+    .width = width,
+    .bpp = 32,
+};
+
+ret = drmIoctl(drm_fd, DRM_IOCTL_MODE_CREATE_DUMB, &dumb_create);
+if(ret)
+    printf("failed to create bumb buf: %s, fd: %d\n", strerror(errno), drm_fd);
+fb->handle = dumb_create.handle;
+fb->size = dumb_create.size;
+  memcpy(handles, (uint32_t [4]){dumb_create.handle,0,0,0}, 16);
+                memcpy(strides, (uint32_t [4]){dumb_create.pitch,0,0,0}, 16);
+                memset(offsets, 0, 16);
+
 		ret = drmModeAddFB2(drm_fd, width, height, format,
 				handles, strides, offsets, &fb->fb_id, 0);
+
+//ret = drmModeAddFB(drm_fd, width, height, 24, 32,
+//                   dumb_create.pitch, dumb_create.handle, &fb->fb_id);
+printf("Added fb id: %d stride: %d bo stride: %d width: %d bo_width: %d height: %d bo_height: %d\n", fb->fb_id, dumb_create.pitch, gbm_bo_get_stride(bo), dumb_create.width, gbm_bo_get_width(bo), dumb_create.height, gbm_bo_get_height(bo));
+//ret = drmModeAddFB(fd, width, height, 24, 32,
+//        dumb_create.pitch, dumb_create.handle, &fb->fb_id);
 	}
 
 	if (ret) {

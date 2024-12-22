@@ -233,12 +233,12 @@ int main(int argc, char *argv[])
 	}
 
 	gbm = init_gbm(drm->fd, drm->mode->hdisplay, drm->mode->vdisplay,
-			format, modifier, surfaceless);
+			GBM_FORMAT_ABGR8888, modifier, surfaceless);
 	if (!gbm) {
 		printf("failed to initialize GBM\n");
 		return -1;
 	}
-
+printf("gears: %d, mode: %d\n", gears, mode);
 	if (gears)
 		egl = init_cube_gears(gbm, samples);
 	else if (mode == SMOOTH)
@@ -266,6 +266,6 @@ int main(int argc, char *argv[])
 	/* clear the color buffer */
 	glClearColor(0.5, 0.5, 0.5, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
-
+printf("Going to run drm\n");
 	return drm->run(gbm, egl);
 }

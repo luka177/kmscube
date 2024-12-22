@@ -223,14 +223,21 @@ const struct egl * init_cube_smooth(const struct gbm *gbm, int samples)
 	int ret;
 
 	ret = init_egl(&gl.egl, gbm, samples);
-	if (ret)
+	if (ret){
+printf("init egl failed: %d\n", ret);
 		return NULL;
+//printf("init egl done\n");
+
+}
+printf("init egl done\n");
 
 	gl.aspect = (GLfloat)(gbm->height) / (GLfloat)(gbm->width);
+printf("init egl done1\n");
 
 	ret = create_program(vertex_shader_source, fragment_shader_source);
 	if (ret < 0)
 		return NULL;
+printf("program create done\n");
 
 	gl.program = ret;
 
@@ -266,6 +273,7 @@ const struct egl * init_cube_smooth(const struct gbm *gbm, int samples)
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)(intptr_t)gl.colorsoffset);
 	glEnableVertexAttribArray(2);
+printf("init gl done\n");
 
 	gl.egl.draw = draw_cube_smooth;
 

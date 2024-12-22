@@ -73,6 +73,8 @@ struct drm {
 struct drm_fb {
 	struct gbm_bo *bo;
 	uint32_t fb_id;
+        uint32_t handle;
+        uint32_t size;
 };
 
 struct drm_fb * drm_fb_get_from_bo(struct gbm_bo *bo);

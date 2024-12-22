@@ -34,6 +34,7 @@
 
 #include "common.h"
 
+
 static struct gbm gbm;
 
 WEAK struct gbm_surface *
@@ -53,24 +54,27 @@ static struct gbm_bo * init_bo(uint64_t modifier)
 {
 	struct gbm_bo *bo = NULL;
 
-	if (gbm_bo_create_with_modifiers) {
-		bo = gbm_bo_create_with_modifiers(gbm.dev,
-						  gbm.width, gbm.height,
-						  gbm.format,
-						  &modifier, 1);
-	}
+//	if (gbm_bo_create_with_modifiers) {
+//		bo = gbm_bo_create_with_modifiers(gbm.dev,
+//						  gbm.width, gbm.height,
+//						  gbm.format,
+//						  &modifier, 1);
+//	}
 
 	if (!bo) {
 		if (modifier != DRM_FORMAT_MOD_LINEAR) {
 			fprintf(stderr, "Modifiers requested but support isn't available\n");
 			return NULL;
 		}
+printf("going to bo creat: %d\n", gbm.dev); 
 
 		bo = gbm_bo_create(gbm.dev,
 				   gbm.width, gbm.height,
 				   gbm.format,
 				   GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
-	}
+	
+printf("bo created\n");	
+}
 
 	if (!bo) {
 		printf("failed to create gbm bo\n");
@@ -82,8 +86,12 @@ static struct gbm_bo * init_bo(uint64_t modifier)
 
 static struct gbm * init_surfaceless(uint64_t modifier)
 {
+printf("going to init %d bos\n", ARRAY_SIZE(gbm.bos));
 	for (unsigned i = 0; i < ARRAY_SIZE(gbm.bos); i++) {
+printf("initing bo: %d\n", i);
 		gbm.bos[i] = init_bo(modifier);
+printf("done initing bo: %d\n", i);
+
 		if (!gbm.bos[i])
 			return NULL;
 	}
@@ -238,7 +246,13 @@ create_framebuffer(const struct egl *egl, struct gbm_bo *bo,
 		printf("failed to get fd for bo: %d\n", fd);
 		return false;
 	}
+printf("Got fd: %d\n", fd);
+//sp<GraphicBuffer> graphicBuffer = new GraphicBuffer(
+  //  gbm_bo_get_width(bo), gbm_bo_get_height(bo), (int)gbm_bo_get_format(bo), 0, gbm_bo_get_stride(bo), 1 * 4  // Assuming stride * 4 for RGBA8888
+//);
 
+// Get the ANativeWindowBuffer from the GraphicBuffer
+//ANativeWindowBuffer* nativeWindowBuffer = graphicBuffer->getNativeBuffer();
 	EGLint khr_image_attrs[17] = {
 		EGL_WIDTH, gbm_bo_get_width(bo),
 		EGL_HEIGHT, gbm_bo_get_height(bo),
@@ -270,9 +284,11 @@ create_framebuffer(const struct egl *egl, struct gbm_bo *bo,
 		printf("failed to make image from buffer object\n");
 		return false;
 	}
+printf("got egl buf\n");
 
 	// EGLImage takes the fd ownership.
 	close(fd);
+printf("cloded fd\n");
 
 	// 2. Create GL texture and framebuffer.
 	glGenTextures(1, &fb->tex);
@@ -288,6 +304,7 @@ create_framebuffer(const struct egl *egl, struct gbm_bo *bo,
 	glBindFramebuffer(GL_FRAMEBUFFER, fb->fb);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
 			fb->tex, 0);
+printf("created gl texture\n");
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		printf("failed framebuffer check for created target buffer\n");
@@ -295,7 +312,7 @@ create_framebuffer(const struct egl *egl, struct gbm_bo *bo,
 		glDeleteTextures(1, &fb->tex);
 		return false;
 	}
-
+printf("status checked gl texture\n");
 	return true;
 }
 
@@ -338,14 +355,16 @@ int init_egl(struct egl *egl, const struct gbm *gbm, int samples)
 	get_proc_client(EGL_EXT_platform_base, eglGetPlatformDisplayEXT);
 
 	if (egl->eglGetPlatformDisplayEXT) {
-		egl->display = egl->eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_KHR,
-				gbm->dev, NULL);
+//		egl->display = egl->eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_KHR,
+//				gbm->dev, NULL);
 	} else {
-		egl->display = eglGetDisplay((EGLNativeDisplayType)gbm->dev);
+//		egl->display = eglGetDisplay((EGLNativeDisplayType)gbm->dev);
 	}
+egl->display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+int ret = eglInitialize(egl->display, &major, &minor);
 
-	if (!eglInitialize(egl->display, &major, &minor)) {
-		printf("failed to initialize\n");
+	if (!ret) {
+		printf("failed to initialize: %d\n", ret);
 		return -1;
 	}
 
@@ -377,13 +396,16 @@ int init_egl(struct egl *egl, const struct gbm *gbm, int samples)
 		return -1;
 	}
 
-	if (!egl_choose_config(egl->display, config_attribs, gbm->format,
+/*	if (!egl_choose_config(egl->display, config_attribs, gbm->format,
                                &egl->config)) {
 		printf("failed to choose config\n");
 		return -1;
-	}
-
-	egl->context = eglCreateContext(egl->display, egl->config,
+	}*/
+EGLConfig ecfg;
+EGLint num_config;
+eglChooseConfig((EGLDisplay) egl->display, config_attribs, &ecfg, 1, &num_config);
+egl->config = ecfg;	
+egl->context = eglCreateContext(egl->display, egl->config,
 			EGL_NO_CONTEXT, context_attribs);
 	if (egl->context == EGL_NO_CONTEXT) {
 		printf("failed to create context\n");
@@ -435,6 +457,7 @@ int init_egl(struct egl *egl, const struct gbm *gbm, int samples)
 			}
 		}
 	}
+printf("create framebuffer ok\n");
 
 	return 0;
 }
@@ -449,9 +472,10 @@ int create_program(const char *vs_src, const char *fs_src)
 		printf("vertex shader creation failed!:\n");
 		return -1;
 	}
-
+printf("create_program 1\n");
 	glShaderSource(vertex_shader, 1, &vs_src, NULL);
 	glCompileShader(vertex_shader);
+printf("create_program 2\n");
 
 	glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &ret);
 	if (!ret) {
@@ -468,14 +492,18 @@ int create_program(const char *vs_src, const char *fs_src)
 
 		return -1;
 	}
+printf("create_program 3\n");
 
 	fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 	if (fragment_shader == 0) {
 		printf("fragment shader creation failed!:\n");
 		return -1;
 	}
+printf("create_program 4\n");
+
 	glShaderSource(fragment_shader, 1, &fs_src, NULL);
 	glCompileShader(fragment_shader);
+printf("create_program 5\n");
 
 	glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &ret);
 	if (!ret) {
@@ -493,11 +521,14 @@ int create_program(const char *vs_src, const char *fs_src)
 
 		return -1;
 	}
+printf("create_program 6\n");
 
 	program = glCreateProgram();
+printf("create_program 7\n");
 
 	glAttachShader(program, vertex_shader);
 	glAttachShader(program, fragment_shader);
+printf("create_program 8\n");
 
 	return program;
 }

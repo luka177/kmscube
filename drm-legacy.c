@@ -25,6 +25,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/select.h>
+#include<unistd.h>
+#include <stdlib.h>
+#include <sys/mman.h>  // For mmap and munmap
+#include <fcntl.h>     // For file control options (optional, e.g., for open flags)
 
 #include "common.h"
 #include "drm-common.h"
@@ -39,6 +43,18 @@ static void page_flip_handler(int fd, unsigned int frame,
 
 	int *waiting_for_flip = data;
 	*waiting_for_flip = 0;
+}
+
+void copy_with_stride(uint8_t *source, uint8_t *target, 
+                      uint32_t width, uint32_t height, 
+                      uint32_t source_stride, uint32_t target_stride, 
+                      uint32_t bytes_per_pixel) {
+    uint32_t row_size = width * bytes_per_pixel;
+    for (uint32_t row = 0; row < height; row++) {
+        memcpy(target + row * target_stride,
+               source + row * source_stride,
+               row_size);
+    }
 }
 
 static int legacy_run(const struct gbm *gbm, const struct egl *egl)
@@ -65,7 +81,7 @@ static int legacy_run(const struct gbm *gbm, const struct egl *egl)
 		fprintf(stderr, "Failed to get a new framebuffer BO\n");
 		return -1;
 	}
-
+printf("Going to use: %d as initial fb\n", fb->fb_id);
 	/* set mode: */
 	ret = drmModeSetCrtc(drm.fd, drm.crtc_id, fb->fb_id, 0, 0,
 			&drm.connector_id, 1, drm.mode);
@@ -73,7 +89,7 @@ static int legacy_run(const struct gbm *gbm, const struct egl *egl)
 		printf("failed to set mode: %s\n", strerror(errno));
 		return ret;
 	}
-
+sleep(1);
 	start_time = report_time = get_time_ns();
 
 	while (i < drm.count) {
@@ -101,6 +117,7 @@ static int legacy_run(const struct gbm *gbm, const struct egl *egl)
 			glFinish();
 			next_bo = gbm->bos[frame % NUM_BUFFERS];
 		}
+printf("going to drm_fb_get_from_bo\n");
 		fb = drm_fb_get_from_bo(next_bo);
 		if (!fb) {
 			fprintf(stderr, "Failed to get a new framebuffer BO\n");
@@ -111,11 +128,42 @@ static int legacy_run(const struct gbm *gbm, const struct egl *egl)
 		 * Here you could also update drm plane layers if you want
 		 * hw composition
 		 */
+unsigned char *temp_buffer = malloc(drm.mode->hdisplay * drm.mode->vdisplay * 4);
+if (!temp_buffer) {
+    perror("Failed to allocate temporary buffer");
+    return -1;
+}
+
+glReadPixels(0, 0, drm.mode->hdisplay, drm.mode->vdisplay, GL_RGBA, GL_UNSIGNED_BYTE, temp_buffer);
+
+GLint alignment;
+glGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
+int row_size = 800 * 4;
+int stride = (row_size + alignment - 1) & ~(alignment - 1);
+
+struct drm_mode_map_dumb map = {0};
+
+map.handle = fb->handle;  // Dumb buffer handle
+drmIoctl(gbm_device_get_fd(gbm_bo_get_device(bo)), DRM_IOCTL_MODE_MAP_DUMB, &map);
+
+// Map the buffer to userspace
+void *buffer_ptr = mmap(0, fb->size, PROT_READ | PROT_WRITE, MAP_SHARED, gbm_device_get_fd(gbm_bo_get_device(bo)), map.offset);
+if (buffer_ptr == MAP_FAILED) {
+    perror("mmap failed");
+    return -1;
+}
+
+//memcpy(buffer_ptr, temp_buffer, fb->size);
+copy_with_stride(temp_buffer, buffer_ptr, 800, 600, stride, 3328, 4);
+munmap(buffer_ptr, fb->size);
+free(temp_buffer);
+
+printf("Going to flip to: %d\n", fb->fb_id);
 
 		ret = drmModePageFlip(drm.fd, drm.crtc_id, fb->fb_id,
 				DRM_MODE_PAGE_FLIP_EVENT, &waiting_for_flip);
 		if (ret) {
-			printf("failed to queue page flip: %s\n", strerror(errno));
+			printf("failed to queue page flip: %s fd: %d\n", strerror(errno), drm.fd);
 			return -1;
 		}
 
